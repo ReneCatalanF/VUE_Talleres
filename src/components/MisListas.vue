@@ -10,7 +10,10 @@
         <legend>Mis Listas</legend>
         <div class="card" v-for="(list) in lists" v-bind:key="list.id"
         v-bind:style="{ 'background-color': list.color }">
-          <div class="card-body">{{ list.nombre }}</div>
+          <div class="card-body">
+          <h5>{{ list.nombre }}</h5>
+          <small>{{ list.fecha | formatDate }}</small>
+          </div>
         </div>
 
         <div v-if="lists.length == 0" class="alert alert-warning">
@@ -52,8 +55,18 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import TaskList from '@/models/TaskList';
+import moment from 'moment';
+import { filter } from 'vue/types/umd';
 
-@Component
+@Component({
+    filters: {
+        formatDate: function (value: any) {
+            //TODO, verificar que hay algo en value!
+            return value.format("DD/MM/YYYY hh:mm:ss");
+        }
+    }
+})
+
 export default class Mislistas extends Vue {
   $refs!: {
     newList_nombre: HTMLFormElement
@@ -81,6 +94,7 @@ export default class Mislistas extends Vue {
 
   addList(): void {
     if (this.newList.nombre != "") {
+      this.newList.fecha = moment();
       this.lists.push(this.newList);
       this.mode = 'list';
     } else {
