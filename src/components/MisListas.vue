@@ -32,6 +32,9 @@
                     <button v-on:click="deleteList(index)" class="btn btn-sm btn-danger" v-bind:title='"Eliminar"'>
                       <font-awesome-icon icon="trash"></font-awesome-icon>
                     </button>
+                    <button v-on:click="editMode()" class="btn btn-primary">
+                      Editar
+                    </button>
                     <button v-if="list.visible" @click="visibleList(index)" class="btn btn-sm btn-info"
                       :title="'Ocultar lista'">
                       <font-awesome-icon icon="eye-slash"></font-awesome-icon>
@@ -106,6 +109,38 @@
         </div>
       </fieldset>
     </div>
+
+    <div class="container" v-if="mode == 'edit'">
+      <fieldset>
+        <legend>Añadir nueva lista</legend>
+        <form>
+          <div class="form-group">
+            <label for="addListNombre">Nombre :</label>
+            <input ref="newList_nombre" v-model="newList.nombre" type="text" class="form-control" id="addListNombre"
+              v-bind:placeholder='"Nombre de la Lista"' />
+            <span v-if="errlist.nombre" class="small text-danger">
+              Debe escribir un nombre de la lista.
+            </span>
+          </div>
+          <div class="form-group">
+            <label for="addListColor">Fecha de la lista:</label>
+            <input v-model="newList.fecha" type="date" class="form-control" id="addListFecha">
+          </div>
+          <div class="form-group">
+            <label for="addListColor">Color de la lista:</label>
+            <input v-model="newList.color" type="color" class="form-control" id="addListColor">
+          </div>
+        </form>
+        <div class="btn-group">
+          <button v-on:click="saveList()" class="btn btn-primary">
+            Editar
+          </button>
+          <button v-on:click="listMode()" class="btn btn-danger">
+            Volver atras
+          </button>
+        </div>
+      </fieldset>
+    </div>
   </div>
 </template>
 
@@ -135,9 +170,11 @@ export default class Mislistas extends Vue {
 
   mode = "list";
   lists: TaskList[] = [];
+
   slctVisible = "T";
 
   newList: TaskList = new TaskList();
+  editListthis: TaskList = new TaskList();
   errlist = { nombre: false };
   ordenarPor = 'nombre';
 
@@ -175,8 +212,8 @@ export default class Mislistas extends Vue {
         const fechaB = b.fecha ? this.stringToDate(b.fecha) : null;
 
         if (!fechaA && !fechaB) return 0; // ambos null
-                if (!fechaA) return 1; // a null
-                if (!fechaB) return -1; // b null
+        if (!fechaA) return 1; // a null
+        if (!fechaB) return -1; // b null
 
         return fechaA!.getTime() - fechaB!.getTime();
       })
@@ -194,6 +231,30 @@ export default class Mislistas extends Vue {
 
   listMode(): void {
     this.mode = "list";
+  }
+  editMode(index: number): void {
+    this.editListthis = { ...this.lists[index] };
+    this.mode = "edit";
+    this.errlist.nombre = false;
+  }
+  saveList(): void {
+    if (this.editListthis.nombre != "") {
+      if (this.editListthis.fecha == null) {
+        this.editListthis.fecha = this.getFechaHoyString();
+      }
+      const index = this.lists.findIndex(l => l.id === this.editListthis.id);
+      if (index !== -1) {
+        this.lists.splice(index, 1, { ...this.editListthis });
+        this.mode = "list";
+        this.editListthis = new TaskList();
+      }
+      this.mode = 'list';
+    } else {
+      this.errlist.nombre = true;
+      this.$refs.newList_nombre.focus();
+    }
+
+
   }
 
   addList(): void {
