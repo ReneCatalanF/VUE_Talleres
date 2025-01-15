@@ -15,8 +15,15 @@
             <option value="N">Ver NO visibles</option>
           </select>
         </div>
+        <div>
+          <label for="ordenarPor">Ordenar por:</label>
+          <select id="ordenarPor" v-model="ordenarPor">
+            <option value="nombre">Nombre</option>
+            <option value="fecha">Fecha</option>
+          </select>
+        </div>
         <template>
-          <div v-for="(list, index) in lists" :key="list.id">
+          <div v-for="(list, index) in listasOrdenadas" :key="list.id">
             <div class="card" :key="list.id" :style="{ 'background-color': list.color }" v-if="getVisibility(index)">
               <div class="card-body">
                 <div class="titulolista">
@@ -34,12 +41,13 @@
                     </button>
                   </div>
                 </div>
-                <small>{{ list.fecha | formatDate }}</small>
+                <small>{{ list.fecha }}</small>
               </div>
             </div>
           </div>
         </template>
 
+        <!--template>
         <div v-for="(list, index) in lists" :key="list.id">
           <div class="card" :key="list.id" :style="{ 'background-color': list.color }" v-if="list.visible">
             <div class="card-body">
@@ -78,6 +86,10 @@
             <span v-if="errlist.nombre" class="small text-danger">
               Debe escribir un nombre de la lista.
             </span>
+          </div>
+          <div class="form-group">
+            <label for="addListColor">Fecha de la lista:</label>
+            <input v-model="newList.fecha" type="date" class="form-control" id="addListFecha">
           </div>
           <div class="form-group">
             <label for="addListColor">Color de la lista:</label>
@@ -123,10 +135,54 @@ export default class Mislistas extends Vue {
 
   mode = "list";
   lists: TaskList[] = [];
-  slctVisible="T";
+  slctVisible = "T";
 
   newList: TaskList = new TaskList();
   errlist = { nombre: false };
+  ordenarPor = 'nombre';
+
+  stringToDate(dateString: string | null): Date | null {
+    if (!dateString) {
+      return null;
+    }
+
+    const partes = dateString.split('-');
+    if (partes.length === 3) {
+      const anio = parseInt(partes[0], 10);
+      const mes = parseInt(partes[1], 10) - 1; // Los meses en Date van de 0 a 11
+      const dia = parseInt(partes[2], 10);
+      return new Date(anio, mes, dia);
+    }
+    return null; // Devuelve null si el formato no es válido
+  }
+
+  getFechaHoyString(): string {
+    const hoy = new Date();
+    const anio = hoy.getFullYear();
+    const mes = String(hoy.getMonth() + 1).padStart(2, '0'); // Añade un 0 delante si es necesario
+    const dia = String(hoy.getDate()).padStart(2, '0'); // Añade un 0 delante si es necesario
+    return `${anio}-${mes}-${dia}`;
+  }
+
+
+  get listasOrdenadas() {
+    const listasCopia = [...this.lists]
+    if (this.ordenarPor == 'nombre') {
+      return listasCopia.sort((a, b) => a.nombre.localeCompare(b.nombre))
+    } else if (this.ordenarPor == 'fecha') {
+      return listasCopia.sort((a, b) => {
+        const fechaA = a.fecha ? this.stringToDate(a.fecha) : null;
+        const fechaB = b.fecha ? this.stringToDate(b.fecha) : null;
+
+        if (!fechaA && !fechaB) return 0; // ambos null
+                if (!fechaA) return 1; // a null
+                if (!fechaB) return -1; // b null
+
+        return fechaA!.getTime() - fechaB!.getTime();
+      })
+    }
+    return listasCopia
+  }
 
   addMode(): void {
     let nextId = this.lists.length > 0 ? this.lists[this.lists.length - 1].id + 1 : 1;
@@ -142,7 +198,9 @@ export default class Mislistas extends Vue {
 
   addList(): void {
     if (this.newList.nombre != "") {
-      this.newList.fecha = moment();
+      if (this.newList.fecha == null) {
+        this.newList.fecha = this.getFechaHoyString();
+      }
       this.newList.visible = true;
       this.lists.push(this.newList);
       this.mode = 'list';
@@ -150,6 +208,11 @@ export default class Mislistas extends Vue {
       this.errlist.nombre = true;
       this.$refs.newList_nombre.focus();
     }
+  }
+
+  formatDate2(value: any) {
+    //TODO, verificar que hay algo en value!
+    return value.format("DD/MM/YYYY hh:mm:ss");
   }
 
   visibleList(index: number) {

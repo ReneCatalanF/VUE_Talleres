@@ -6,6 +6,6 @@ export default class TaskList {
     nombre!: string;
     color!: string;
     visible!: boolean;
-    fecha:moment.Moment=moment();
+    fecha!: string;
     tasks!: ItemTask[];
 }
