@@ -8,19 +8,64 @@
     <div class="container" v-if="mode == 'list'">
       <fieldset>
         <legend>Mis Listas</legend>
-        <div class="card" v-for="(list) in lists" v-bind:key="list.id"
-        v-bind:style="{ 'background-color': list.color }">
-          <div class="card-body">
-          <h5>{{ list.nombre }}</h5>
-          <small>{{ list.fecha | formatDate }}</small>
+        <div class="row justify-content-end">
+          <select class="form-control col-md-3" v-model="slctVisible">
+            <option value="T">Ver todas</option>
+            <option value="V">Ver visibles</option>
+            <option value="N">Ver NO visibles</option>
+          </select>
+        </div>
+        <template>
+          <div v-for="(list, index) in lists" :key="list.id">
+            <div class="card" :key="list.id" :style="{ 'background-color': list.color }" v-if="getVisibility(index)">
+              <div class="card-body">
+                <div class="titulolista">
+                  {{ list.nombre }}
+                  <div class="btn-group">
+                    <button v-on:click="deleteList(index)" class="btn btn-sm btn-danger" v-bind:title='"Eliminar"'>
+                      <font-awesome-icon icon="trash"></font-awesome-icon>
+                    </button>
+                    <button v-if="list.visible" @click="visibleList(index)" class="btn btn-sm btn-info"
+                      :title="'Ocultar lista'">
+                      <font-awesome-icon icon="eye-slash"></font-awesome-icon>
+                    </button>
+                    <button v-else @click="visibleList(index)" class="btn btn-sm btn-info" :title="'Mostrar lista'">
+                      <font-awesome-icon icon="eye"></font-awesome-icon>
+                    </button>
+                  </div>
+                </div>
+                <small>{{ list.fecha | formatDate }}</small>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <div v-for="(list, index) in lists" :key="list.id">
+          <div class="card" :key="list.id" :style="{ 'background-color': list.color }" v-if="list.visible">
+            <div class="card-body">
+              <div class="titulolista">
+                {{ list.nombre }}
+                <button v-if="list.visible" @click="visibleList(index)" class="btn btn-sm btn-info"
+                  :title='"Ocultar lista"'>
+                  <font-awesome-icon icon="eye-slash"></font-awesome-icon>
+                </button>
+                <button v-else @click="visibleList(index)" class="btn btn-sm btn-info" :title='"Mostrar lista"'>
+                  <font-awesome-icon icon="eye"></font-awesome-icon>
+                </button>
+              </div>
+              <small>{{ list.fecha | formatDate }}</small>
+            </div>
           </div>
         </div>
+        </template-->
 
         <div v-if="lists.length == 0" class="alert alert-warning">
           No has creado ninguna Lista
         </div>
       </fieldset>
     </div>
+
+
 
     <div class="container" v-if="mode == 'add'">
       <fieldset>
@@ -59,13 +104,15 @@ import moment from 'moment';
 import { filter } from 'vue/types/umd';
 
 @Component({
-    filters: {
-        formatDate: function (value: any) {
-            //TODO, verificar que hay algo en value!
-            return value.format("DD/MM/YYYY hh:mm:ss");
-        }
+  filters: {
+    formatDate: function (value: any) {
+      //TODO, verificar que hay algo en value!
+      return value.format("DD/MM/YYYY hh:mm:ss");
     }
+  }
 })
+
+
 
 export default class Mislistas extends Vue {
   $refs!: {
@@ -76,6 +123,7 @@ export default class Mislistas extends Vue {
 
   mode = "list";
   lists: TaskList[] = [];
+  slctVisible="T";
 
   newList: TaskList = new TaskList();
   errlist = { nombre: false };
@@ -95,6 +143,7 @@ export default class Mislistas extends Vue {
   addList(): void {
     if (this.newList.nombre != "") {
       this.newList.fecha = moment();
+      this.newList.visible = true;
       this.lists.push(this.newList);
       this.mode = 'list';
     } else {
@@ -102,5 +151,35 @@ export default class Mislistas extends Vue {
       this.$refs.newList_nombre.focus();
     }
   }
+
+  visibleList(index: number) {
+    this.lists[index].visible = (this.lists[index].visible ? false : true);
+  }
+
+  deleteList(list: number) {
+    this.lists.splice(list, 1);
+  }
+
+  getVisibility(index: number) {
+    let res = true;
+    switch (this.slctVisible) {
+      case "V":
+        res = this.lists[index].visible;
+        break;
+      case "N":
+        res = !this.lists[index].visible;
+        break;
+      default:
+        res = true;
+        break;
+    }
+    return res;
+  }
 }
 </script>
+
+<style scoped>
+.titulolista {
+  font-size: 2em;
+}
+</style>
